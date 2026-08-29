@@ -8,11 +8,24 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "echo 'Prisma is not configured yet (planned for a later phase).'",
-    "db:migrate": "echo 'Prisma is not configured yet (planned for a later phase).'",
-    "db:studio": "echo 'Prisma is not configured yet (planned for a later phase).'"
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.5",
+    "prisma": "^6.2.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }

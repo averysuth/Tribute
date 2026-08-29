@@ -1,14 +1,21 @@
-import Fastify from 'fastify';
+import { prisma } from '@tribute/database';
 
-const server = Fastify({ logger: true });
+import { buildApp } from './app.js';
+import { env } from './config/env.js';
 
-server.get('/', async () => {
-  return { service: 'tribute-api', status: 'running' };
-});
+const server = buildApp();
 
-const port = Number(process.env.PORT ?? 4000);
+try {
+  await prisma.$connect();
+  server.log.info('Database connection established');
+} catch (error) {
+  server.log.error(error, 'Failed to connect to the database');
+  process.exit(1);
+}
 
-server.listen({ port, host: '0.0.0.0' }).catch((error) => {
+try {
+  await server.listen({ port: env.PORT, host: '0.0.0.0' });
+} catch (error) {
   server.log.error(error);
   process.exit(1);
-});
+}

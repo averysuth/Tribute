@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum AttendanceType {
+  ATTENDING
+  COMPETING
+}
+
+/// Mirrors a Supabase Auth user. `id` matches `auth.users.id` exactly —
+/// it is set by the API from the verified JWT, never generated here.
+model UserProfile {
+  id          String   @id @db.Uuid
+  username    String   @unique
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  performerProfile        PerformerProfile?
+  organizationsCreated    Organization[]       @relation("OrganizationCreatedBy")
+  organizationMemberships OrganizationMember[]
+  eventAttendances        EventAttendance[]
+
+  @@map("user_profiles")
+}
+
+model PerformerProfile {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @db.Uuid
+  performerType String
+  journey       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        UserProfile           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  danceStyles PerformerDanceStyle[]
+
+  @@map("performer_profiles")
+}
+
+model DanceStyle {
+  id   String @id @default(uuid()) @db.Uuid
+  name String
+  slug String @unique
+
+  performers PerformerDanceStyle[]
+
+  @@map("dance_styles")
+}
+
+model PerformerDanceStyle {
+  performerId  String  @db.Uuid
+  danceStyleId String  @db.Uuid
+  isPrimary    Boolean @default(false)
+
+  performer  PerformerProfile @relation(fields: [performerId], references: [id], onDelete: Cascade)
+  danceStyle DanceStyle       @relation(fields: [danceStyleId], references: [id], onDelete: Cascade)
+
+  @@id([performerId, danceStyleId])
+  @@index([danceStyleId])
+  @@map("performer_dance_styles")
+}
+
+model Organization {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  createdBy   String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator UserProfile          @relation("OrganizationCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  members OrganizationMember[]
+  events  Event[]
+
+  @@index([createdBy])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  organizationId String           @db.Uuid
+  userId         String           @db.Uuid
+  role           OrganizationRole @default(MEMBER)
+  createdAt      DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         UserProfile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Event {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @db.Uuid
+  name            String
+  slug            String
+  description     String?
+  venueName       String?
+  address         String?
+  startsAt        DateTime
+  endsAt          DateTime
+  registrationUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  attendances  EventAttendance[]
+
+  @@unique([organizationId, slug])
+  @@index([startsAt])
+  @@map("events")
+}
+
+model EventAttendance {
+  eventId        String         @db.Uuid
+  userId         String         @db.Uuid
+  attendanceType AttendanceType
+  createdAt      DateTime       @default(now())
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
+  @@map("event_attendances")
+}

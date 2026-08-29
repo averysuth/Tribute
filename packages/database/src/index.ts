@@ -1,1 +1,2 @@
-export const DATABASE_PACKAGE_PLACEHOLDER = true;
+export { prisma } from './client.js';
+export * from '@prisma/client';
