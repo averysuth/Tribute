@@ -15,7 +15,10 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
     "db:generate": "pnpm --filter @tribute/database db:generate",
     "db:migrate": "pnpm --filter @tribute/database db:migrate",
-    "db:studio": "pnpm --filter @tribute/database db:studio"
+    "db:push": "pnpm --filter @tribute/database db:push",
+    "db:studio": "pnpm --filter @tribute/database db:studio",
+    "db:reset": "pnpm --filter @tribute/database db:reset",
+    "db:seed": "pnpm --filter @tribute/database db:seed"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
