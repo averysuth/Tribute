@@ -1,0 +1,18 @@
+{
+  "name": "@tribute/database",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:generate": "echo 'Prisma is not configured yet (planned for a later phase).'",
+    "db:migrate": "echo 'Prisma is not configured yet (planned for a later phase).'",
+    "db:studio": "echo 'Prisma is not configured yet (planned for a later phase).'"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
