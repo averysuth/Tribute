@@ -6,7 +6,6 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  SUPABASE_JWT_SECRET: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(4000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });

@@ -4,6 +4,12 @@ import { requireUser } from '../auth/auth.plugin.js';
 import { syncUserProfileSchema } from './user.schema.js';
 import { userService } from './user.service.js';
 
+export async function getMe(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const user = requireUser(request);
+  const profile = await userService.getById(user.id);
+  reply.send(profile);
+}
+
 export async function syncMe(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const user = requireUser(request);
   const input = syncUserProfileSchema.parse(request.body);
