@@ -26,3 +26,15 @@ export class NotFoundError extends AppError {
     super('NOT_FOUND', message, 404);
   }
 }
+
+export class AuthorizationError extends AppError {
+  constructor(message = 'You do not have permission to perform this action') {
+    super('FORBIDDEN', message, 403);
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message = 'Invalid request') {
+    super('INVALID_REQUEST', message, 400);
+  }
+}

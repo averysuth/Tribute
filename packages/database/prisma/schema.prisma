@@ -22,13 +22,14 @@ enum AttendanceType {
 /// Mirrors a Supabase Auth user. `id` matches `auth.users.id` exactly —
 /// it is set by the API from the verified JWT, never generated here.
 model UserProfile {
-  id          String   @id @db.Uuid
-  username    String   @unique
-  displayName String
-  bio         String?
-  avatarUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @db.Uuid
+  username      String   @unique
+  displayName   String
+  bio           String?
+  avatarUrl     String?
+  coverImageUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   performerProfile        PerformerProfile?
   organizationsCreated    Organization[]       @relation("OrganizationCreatedBy")
@@ -43,6 +44,8 @@ model PerformerProfile {
   userId        String   @unique @db.Uuid
   performerType String
   journey       String?
+  region        String?
+  community     String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -112,8 +115,11 @@ model Event {
   name            String
   slug            String
   description     String?
+  posterUrl       String?
   venueName       String?
   address         String?
+  mapUrl          String?
+  timeZone        String
   startsAt        DateTime
   endsAt          DateTime
   registrationUrl String?

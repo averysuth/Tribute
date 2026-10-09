@@ -1,12 +1,20 @@
 import { Prisma } from '@tribute/database';
 
-import { ConflictError } from '../../lib/errors.js';
+import { ConflictError, NotFoundError } from '../../lib/errors.js';
 import type { AuthenticatedUser } from '../auth/auth.types.js';
 import { userRepository } from './user.repository.js';
 import type { SyncUserProfileInput } from './user.schema.js';
 import type { UserProfile } from './user.types.js';
 
 export const userService = {
+  async getById(userId: string): Promise<UserProfile> {
+    const profile = await userRepository.findById(userId);
+    if (!profile) {
+      throw new NotFoundError('User profile not found');
+    }
+    return profile;
+  },
+
   async syncProfile(
     user: AuthenticatedUser,
     input: SyncUserProfileInput,

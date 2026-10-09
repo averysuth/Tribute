@@ -1,12 +1,16 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import { jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 import { env } from '../../config/env.js';
 import { AuthenticationError } from '../../lib/errors.js';
 import type { AuthenticatedUser } from './auth.types.js';
 
-const secret = new TextEncoder().encode(env.SUPABASE_JWT_SECRET);
+// Supabase signs access tokens with project-specific asymmetric keys (ES256) and
+// publishes the public keys at this well-known JWKS endpoint. `createRemoteJWKSet`
+// fetches and caches them, refetching automatically if a token references an
+// unknown `kid` (e.g. after Supabase rotates signing keys).
+const JWKS = createRemoteJWKSet(new URL('/auth/v1/.well-known/jwks.json', env.SUPABASE_URL));
 
 async function authenticate(request: FastifyRequest): Promise<void> {
   const header = request.headers.authorization;
@@ -19,7 +23,7 @@ async function authenticate(request: FastifyRequest): Promise<void> {
 
   let payload;
   try {
-    ({ payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] }));
+    ({ payload } = await jwtVerify(token, JWKS, { algorithms: ['ES256'] }));
   } catch {
     throw new AuthenticationError('Invalid or expired token');
   }
