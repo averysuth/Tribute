@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/cors": "^11.3.1",
     "@tribute/database": "workspace:*",
     "@tribute/validation": "workspace:*",
     "dotenv": "^16.4.7",

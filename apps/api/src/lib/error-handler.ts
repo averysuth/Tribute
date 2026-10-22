@@ -60,6 +60,18 @@ export function errorHandler(error: Error, request: FastifyRequest, reply: Fasti
     return;
   }
 
+  // Fastify's own request-parsing errors (e.g. a Content-Type: application/json
+  // header sent with an empty body) carry a 4xx `statusCode` and a safe,
+  // instructive message — these are malformed requests, not server failures,
+  // and must not be collapsed into a generic 500 or logged as a server error.
+  const statusCode = 'statusCode' in error ? error.statusCode : undefined;
+  if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+    reply.status(statusCode).send({
+      error: { code: 'INVALID_REQUEST', message: error.message },
+    });
+    return;
+  }
+
   request.log.error(error);
   reply.status(500).send({
     error: { code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong' },

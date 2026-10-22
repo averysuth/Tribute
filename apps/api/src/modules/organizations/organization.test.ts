@@ -122,6 +122,37 @@ describe('organizations module', () => {
     expect(response.statusCode).toBe(403);
   });
 
+  it("returns the caller's own role for a member", async () => {
+    const { body: org } = await createOrg(owner);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/organizations/${org.id}/members/me`,
+      headers: { authorization: `Bearer ${owner.token}` },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().role).toBe('OWNER');
+  });
+
+  it('returns a null role for a non-member (not 403)', async () => {
+    const { body: org } = await createOrg(owner);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/organizations/${org.id}/members/me`,
+      headers: { authorization: `Bearer ${outsider.token}` },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().role).toBeNull();
+  });
+
+  it('rejects checking own role without a token', async () => {
+    const { body: org } = await createOrg(owner);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/v1/organizations/${org.id}/members/me`,
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
   it('only an owner can grant the OWNER role to a new member', async () => {
     const { body: org } = await createOrg(owner);
 

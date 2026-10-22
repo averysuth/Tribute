@@ -60,6 +60,12 @@ export const organizationService = {
     return organizationRepository.listMembers(organizationId);
   },
 
+  async getMyRole(user: AuthenticatedUser, organizationId: string): Promise<OrganizationRole | null> {
+    await getOrganizationOrThrow(organizationId);
+    const membership = await organizationRepository.findMembership(organizationId, user.id);
+    return membership?.role ?? null;
+  },
+
   async addMember(
     user: AuthenticatedUser,
     organizationId: string,

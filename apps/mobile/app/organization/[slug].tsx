@@ -1,12 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '../../providers/auth-provider';
 import { listOrganizationEvents } from '../../services/events';
-import { getOrganizationBySlug } from '../../services/organizations';
+import {
+  followOrganization,
+  listFollowedOrganizations,
+  unfollowOrganization,
+} from '../../services/follows';
+import { getMyOrganizationRole, getOrganizationBySlug } from '../../services/organizations';
 
 export default function OrganizationScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { session } = useAuth();
+  const myId = session?.user.id;
+  const queryClient = useQueryClient();
 
   const organizationQuery = useQuery({
     queryKey: ['organization', slug],
@@ -17,6 +26,32 @@ export default function OrganizationScreen() {
     queryKey: ['organization-events', organizationQuery.data?.id],
     queryFn: () => listOrganizationEvents(organizationQuery.data!.id),
     enabled: !!organizationQuery.data,
+  });
+
+  const followedOrgsQuery = useQuery({
+    queryKey: ['followed-organizations', myId],
+    queryFn: () => listFollowedOrganizations(myId!),
+    enabled: !!myId,
+  });
+
+  const organizationId = organizationQuery.data?.id;
+  const isFollowing = followedOrgsQuery.data?.some((org) => org.id === organizationId) ?? false;
+
+  const myRoleQuery = useQuery({
+    queryKey: ['organization-role', organizationId, myId],
+    queryFn: () => getMyOrganizationRole(organizationId!),
+    enabled: !!organizationId && !!myId,
+  });
+  const canManage = myRoleQuery.data?.role === 'OWNER' || myRoleQuery.data?.role === 'ADMIN';
+
+  const followMutation = useMutation({
+    mutationFn: () => followOrganization(organizationId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['followed-organizations', myId] }),
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => unfollowOrganization(organizationId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['followed-organizations', myId] }),
   });
 
   if (organizationQuery.isPending) {
@@ -40,19 +75,35 @@ export default function OrganizationScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{organization.name}</Text>
-      {organization.description && <Text style={styles.description}>{organization.description}</Text>}
+      {organization.description && (
+        <Text style={styles.description}>{organization.description}</Text>
+      )}
 
-      <Pressable
-        style={styles.secondaryButton}
-        onPress={() =>
-          router.push({
-            pathname: '/organization/[slug]/events/new',
-            params: { slug: organization.slug, organizationId: organization.id },
-          })
-        }
-      >
-        <Text style={styles.secondaryButtonText}>+ Add event</Text>
-      </Pressable>
+      {myId && (
+        <Pressable
+          style={[styles.button, isFollowing && styles.buttonFollowing]}
+          onPress={() => (isFollowing ? unfollowMutation.mutate() : followMutation.mutate())}
+          disabled={followMutation.isPending || unfollowMutation.isPending}
+        >
+          <Text style={isFollowing ? styles.buttonFollowingText : styles.buttonText}>
+            {isFollowing ? 'Following' : 'Follow'}
+          </Text>
+        </Pressable>
+      )}
+
+      {canManage && (
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() =>
+            router.push({
+              pathname: '/organization/[slug]/events/new',
+              params: { slug: organization.slug, organizationId: organization.id },
+            })
+          }
+        >
+          <Text style={styles.secondaryButtonText}>+ Add event</Text>
+        </Pressable>
+      )}
 
       <Text style={styles.sectionTitle}>Events</Text>
       <FlatList
@@ -85,6 +136,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: { color: '#208AEF', fontWeight: '600' },
+  button: {
+    backgroundColor: '#208AEF',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  buttonText: { color: '#fff', fontWeight: '600' },
+  buttonFollowing: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#208AEF' },
+  buttonFollowingText: { color: '#208AEF', fontWeight: '600' },
   eventRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

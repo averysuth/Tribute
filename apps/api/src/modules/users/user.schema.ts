@@ -16,3 +16,7 @@ export const syncUserProfileSchema = z.object({
 });
 
 export type SyncUserProfileInput = z.infer<typeof syncUserProfileSchema>;
+
+export const userIdParamsSchema = z.object({
+  userId: z.string().uuid(),
+});

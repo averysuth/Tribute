@@ -52,6 +52,16 @@ export async function listOrganizationMembers(
   reply.send(members);
 }
 
+export async function getMyOrganizationRole(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  const user = requireUser(request);
+  const { organizationId } = organizationIdParamsSchema.parse(request.params);
+  const role = await organizationService.getMyRole(user, organizationId);
+  reply.send({ role });
+}
+
 export async function addOrganizationMember(
   request: FastifyRequest,
   reply: FastifyReply,

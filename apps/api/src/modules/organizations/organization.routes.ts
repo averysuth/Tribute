@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import {
   addOrganizationMember,
   createOrganization,
+  getMyOrganizationRole,
   getOrganizationBySlug,
   listOrganizationMembers,
   removeOrganizationMember,
@@ -15,6 +16,11 @@ export const organizationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/:slug', getOrganizationBySlug);
   fastify.patch('/:organizationId', { preHandler: fastify.authenticate }, updateOrganization);
 
+  fastify.get(
+    '/:organizationId/members/me',
+    { preHandler: fastify.authenticate },
+    getMyOrganizationRole,
+  );
   fastify.get(
     '/:organizationId/members',
     { preHandler: fastify.authenticate },

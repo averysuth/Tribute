@@ -26,7 +26,10 @@ interface RequestOptions {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, authenticated = true } = options;
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (authenticated) {
     const { data } = await supabase.auth.getSession();
@@ -43,14 +46,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  const json = await response.json();
+  const text = await response.text();
+  const json = text ? JSON.parse(text) : undefined;
 
   if (!response.ok) {
-    throw new ApiError(json.error?.code ?? 'UNKNOWN_ERROR', json.error?.message ?? 'Something went wrong', response.status);
+    throw new ApiError(json?.error?.code ?? 'UNKNOWN_ERROR', json?.error?.message ?? 'Something went wrong', response.status);
   }
 
   return json as T;

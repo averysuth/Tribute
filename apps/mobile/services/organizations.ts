@@ -23,3 +23,11 @@ export function createOrganization(input: CreateOrganizationInput): Promise<Orga
 export function getOrganizationBySlug(slug: string): Promise<Organization> {
   return apiRequest<Organization>(`/api/v1/organizations/${slug}`, { authenticated: false });
 }
+
+export type OrganizationRole = 'OWNER' | 'ADMIN' | 'MEMBER';
+
+export function getMyOrganizationRole(
+  organizationId: string,
+): Promise<{ role: OrganizationRole | null }> {
+  return apiRequest(`/api/v1/organizations/${organizationId}/members/me`);
+}

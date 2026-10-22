@@ -1,0 +1,91 @@
+# Phase 4 regression suite: attendance, follows, and the client-side
+# authorization/caching bugs found while testing them manually.
+#
+# Assumes the app is already running in Expo Go on a booted Simulator
+# with an authenticated session, and that these fixtures exist in the
+# dev DB (seeded ad hoc during Phase 4 testing):
+#   - organization "org-one-authtest" ("Org One"), owned by a different
+#     user than the one currently logged in to the app
+#   - its event "Fall Gathering Powwow"
+#   - a user "dancerfixture1" with a performer profile (dance style:
+#     Chicken), marked COMPETING on that event
+#
+# Run: maestro test apps/mobile/maestro/phase4-regression.yaml
+#
+# Note: RN/iOS merges a row's sibling <Text> nodes into one accessibility
+# label (e.g. "Fall Gathering Powwow, 10/29/2026", "dancerfixture1,
+# COMPETING") — selectors below use the full merged label, not just the
+# visible title text.
+
+appId: host.exp.Exponent
+---
+# Return to the tab root regardless of which screen the app was left on.
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          text: "Back"
+          optional: true
+
+- tapOn: "Powwows"
+- tapOn: "organization-slug"
+- eraseText: 60
+- inputText: "org-one-authtest"
+- tapOn: "View"
+- assertVisible: "Org One"
+
+# Regression: the "+ Add event" button used to render for ANY logged-in
+# user, not just org owners/admins — the server always rejected the
+# request, but the button had no business being shown to a non-member.
+- assertNotVisible: "+ Add event"
+
+- tapOn: "Fall Gathering Powwow, 10/29/2026"
+- assertVisible: "Who's going"
+
+# Attendance picker: switching types must move the active highlight and
+# must be reflected in the (unfiltered) attendee list immediately.
+# Regression: "my attendance" status used to be derived from the
+# *filtered* attendee list, so it could silently disappear depending on
+# which filters were active.
+- assertVisible: "Avery Sutherland, COMPETING"
+- tapOn: "Attending"
+- assertVisible: "Avery Sutherland, ATTENDING"
+- tapOn: "Competing"
+- assertVisible: "Avery Sutherland, COMPETING"
+
+# Dance-style filter: toggling a chip on/off should not error or get stuck.
+- tapOn: "Chicken"
+- assertVisible: "Who's going"
+- tapOn: "Chicken"
+
+# Followed-only toggle: should show only people you follow.
+# Regression: it used to be possible for this to show the wrong set when
+# combined with other state; verify it cleanly isolates to followed users.
+- tapOn:
+    id: "followed-only-switch"
+- assertVisible: "dancerfixture1, COMPETING"
+- assertNotVisible: "Avery Sutherland, COMPETING"
+
+# Follow/unfollow cycle on a user profile, then confirm the event's
+# followed-only filter picks up the change immediately on return.
+# Regression: following a user didn't invalidate event-attendance
+# queries, so a stale (pre-30s-cache) empty result could linger until
+# the screen was left and revisited.
+- tapOn: "dancerfixture1, COMPETING"
+- assertVisible: "Following"
+- tapOn: "Following"
+- assertVisible: "Follow"
+- tapOn: "Follow"
+- assertVisible: "Following"
+
+- tapOn: "Back"
+- assertVisible: "dancerfixture1, COMPETING"
+
+- tapOn: "Back"
+- assertVisible: "Org One"
+
+# Org follow: cycle the org follow button on the organization screen.
+- tapOn: "Following"
+- assertVisible: "Follow"
+- tapOn: "Follow"
+- assertVisible: "Following"

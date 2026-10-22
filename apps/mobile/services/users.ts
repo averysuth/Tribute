@@ -30,3 +30,7 @@ export async function getMyUserProfile(): Promise<UserProfile | null> {
     throw error;
   }
 }
+
+export function getUserById(userId: string): Promise<UserProfile> {
+  return apiRequest<UserProfile>(`/api/v1/users/${userId}`, { authenticated: false });
+}

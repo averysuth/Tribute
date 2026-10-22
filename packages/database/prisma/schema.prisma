@@ -15,6 +15,7 @@ enum OrganizationRole {
 }
 
 enum AttendanceType {
+  INTERESTED
   ATTENDING
   COMPETING
 }
@@ -35,6 +36,9 @@ model UserProfile {
   organizationsCreated    Organization[]       @relation("OrganizationCreatedBy")
   organizationMemberships OrganizationMember[]
   eventAttendances        EventAttendance[]
+  following               UserFollow[]         @relation("UserFollows")
+  followedBy              UserFollow[]         @relation("UserFollowers")
+  organizationFollows     OrganizationFollow[]
 
   @@map("user_profiles")
 }
@@ -78,6 +82,32 @@ model PerformerDanceStyle {
   @@map("performer_dance_styles")
 }
 
+model UserFollow {
+  followerId  String   @db.Uuid
+  followingId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  follower  UserProfile @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following UserProfile @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+model OrganizationFollow {
+  userId         String   @db.Uuid
+  organizationId String   @db.Uuid
+  createdAt      DateTime @default(now())
+
+  user         UserProfile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@index([organizationId])
+  @@map("organization_follows")
+}
+
 model Organization {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
@@ -90,6 +120,7 @@ model Organization {
   creator UserProfile          @relation("OrganizationCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   members OrganizationMember[]
   events  Event[]
+  follows OrganizationFollow[]
 
   @@index([createdBy])
   @@map("organizations")
@@ -138,7 +169,10 @@ model EventAttendance {
   eventId        String         @db.Uuid
   userId         String         @db.Uuid
   attendanceType AttendanceType
+  verified       Boolean        @default(false)
+  verifiedAt     DateTime?
   createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)

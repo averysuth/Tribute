@@ -48,6 +48,20 @@ describe('users module', () => {
     expect(getResponse.json().username).toBe('userstestmain');
   });
 
+  it('returns a user profile publicly by id without authentication', async () => {
+    const response = await app.inject({ method: 'GET', url: `/api/v1/users/${user.id}` });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().username).toBe('userstestmain');
+  });
+
+  it('returns 404 fetching a nonexistent user by id', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/users/00000000-0000-0000-0000-000000000000',
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
   it('rejects syncing with a username already taken by another user', async () => {
     const other = await getOrCreateTestUser('users-test-other');
 
